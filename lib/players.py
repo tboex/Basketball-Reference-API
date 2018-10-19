@@ -39,9 +39,10 @@ class Player:
         self.transactions = []
 
     def fetch_url(self, full):
-        if self.from_file() == False:
+        player_name = self.name.split()
+        is_file = self.from_file()
+        if is_file == False:
             URL = "https://www.basketball-reference.com/players/"
-            player_name = self.name.split()
             first_name = list(player_name[0])
             last_name = list(''.join(player_name[1:]))
             last_name_index = last_name[0]
@@ -214,8 +215,9 @@ class Player:
         print("\n\033[1m\033[96m\033[4mStats:" + '\033[0m')
         print(tabulate(self.stats, headers=self.stat_headers, tablefmt='fancy_grid'))
 
-        print("\n\033[1m\033[96m\033[4mSimularities:" + '\033[0m')
-        print(tabulate(self.similarities_carrer, headers=self.similarities_carrer_headers, tablefmt='fancy_grid'))
+        if self.similarities_carrer_headers:
+            print("\n\033[1m\033[96m\033[4mSimularities:" + '\033[0m')
+            print(tabulate(self.similarities_carrer, headers=self.similarities_carrer_headers, tablefmt='fancy_grid'))
     
     def compare(self, altPlayer):
         headers_comparison = [" "]
@@ -242,7 +244,8 @@ class Player:
         stats = []
         for index, item in enumerate(self.stats[0]):
             temp = []
-
+            print(self.stats)
+            input()
             curr1 = self.stats[0][index]
             carr1 = self.stats[1][index]
             curr2 = altPlayer.stats[0][index]

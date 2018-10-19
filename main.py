@@ -1,11 +1,14 @@
-import players, teams, search
+import lib.players as players
+import lib.teams as teams
+import lib.search as search
+import lib.data_harvest as data_harvest
+import progressbar
 import pprint
 import argparse
-import menu
+import lib.menu as menu
 import shutil
 import os
-import data_harvest
-import progressbar
+
 
 def main():
     make_folders("saved/")
@@ -30,7 +33,11 @@ def main():
 
     args = parser.parse_args()
     name_inp = ' '.join(args.search)
-    mainmenu()
+
+    if name_inp:
+        search_through_both(name_inp)
+    else:
+        mainmenu()
         
 def search_through_database(args, name):
     if args.p:
@@ -48,6 +55,8 @@ def search_through_both(name):
            search_for_team(name)
         except:
             print(''.join(name) + " was not found as either a player or team")
+            input("Press Enter to Continue...")
+            mainmenu()
 
 def search_for_player(name):
     player = players.Player(name)
@@ -97,9 +106,9 @@ def delete_folder(folder):
         try:
             if os.path.isfile(file_path):
                 os.unlink(file_path)
-            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
         except Exception as e:
             print(e)
+
 def mainmenu():
     choice = menu.main_menu()
     if choice == "p":
@@ -152,9 +161,11 @@ def mainmenu():
                 delete_folder("saved/teams/history/cache/")
                 delete_folder("saved/teams/specific/cache/")
                 print("All Cached data deleted")
-        if inp == "p":
+        elif inp == "b":
+            mainmenu()
+        elif inp == "p":
             check_diff_teams(inp)
-        if inp == "dp":
+        elif inp == "dp":
             if menu.y_n_download():
                 notfound = []
                 player_list = data_harvest.get_players()
@@ -169,7 +180,7 @@ def mainmenu():
                             player.fetch_url(True)
                         except:
                             notfound.append(item)
-        if inp == "dt":
+        elif inp == "dt":
             if menu.y_n_download():
                 notfound = []
                 team_list = data_harvest.get_teams()

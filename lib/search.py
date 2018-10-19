@@ -1,5 +1,5 @@
 import difflib
-import data_harvest
+import lib.data_harvest as data_harvest
 
 def get_diff(inp):
     data_inp = data_harvest.get_data()
