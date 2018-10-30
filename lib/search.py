@@ -1,6 +1,7 @@
 import difflib
 import lib.data_harvest as data_harvest
 
+
 def get_diff(inp):
     data_inp = data_harvest.get_data()
 
@@ -11,6 +12,7 @@ def get_diff(inp):
     diff = difflib.get_close_matches(inp, data)
     return diff
 
+
 def get_diff_teams(inp):
     data_inp = data_harvest.get_data()
 
@@ -19,6 +21,7 @@ def get_diff_teams(inp):
     data = teams
     diff = difflib.get_close_matches(inp, data)
     return diff
+
 
 def get_diff_players(inp):
     data_inp = data_harvest.get_data()

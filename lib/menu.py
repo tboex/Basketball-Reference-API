@@ -1,15 +1,18 @@
 import qprompt
 import re
 from colorama import Fore, Back, Style
+import lib.settings as settings
+
 
 def main_menu():
     menu = qprompt.Menu()
-    menu.add("p", Fore.RED + "Player" + Style.RESET_ALL)
-    menu.add("t", Fore.RED + "Team" + Style.RESET_ALL)
-    menu.add("c", Fore.RED + "Compare" + Style.RESET_ALL)
-    menu.add("s", Fore.RED + "Settings" + Style.RESET_ALL)
-    menu.add("q", "Quit" )
+    menu.add("p", f"{Fore.RED}Player{Style.RESET_ALL}")
+    menu.add("t", f"{Fore.RED}Team{Style.RESET_ALL}")
+    menu.add("c", f"{Fore.RED}Compare{Style.RESET_ALL}")
+    menu.add("s", f"{Fore.RED}Settings{Style.RESET_ALL}")
+    menu.add("q", "Quit")
     return menu.show()
+
 
 def diff_menu(diff_arr):
     menu = qprompt.Menu()
@@ -17,30 +20,43 @@ def diff_menu(diff_arr):
         menu.add(str(index), item)
     return menu.show(returns="desc")
 
+
 def hist_or_spec_team():
     menu = qprompt.Menu()
-    menu.add("h", Fore.RED + "History" + Style.RESET_ALL)
-    menu.add("s", Fore.RED + "Specific" + Style.RESET_ALL)
+    menu.add("h", f"{Fore.RED}History{Style.RESET_ALL}")
+    menu.add("s", f"{Fore.RED}Specific{Style.RESET_ALL}")
     return menu.show()
+
 
 def settings_menu():
     menu = qprompt.Menu()
-    menu.add("p", Fore.RED + "Download Names" + Style.RESET_ALL)
-    menu.add("dp", Fore.RED + "Download All Players" + Style.RESET_ALL)
-    menu.add("dt", Fore.RED + "Download All Teams" + Style.RESET_ALL)
-    menu.add("c", Fore.RED + "Clear Cache" + Style.RESET_ALL)
+    menu.add("d", f"{Fore.RED}Downloades{Style.RESET_ALL}")
+    menu.add("c", f"{Fore.RED}Clear Cache{Style.RESET_ALL}")
+    menu.add("j", f"{Fore.RED}Download Searches as JSON{Style.RESET_ALL} - Currently " + settings.get_JSON())
+    menu.add("l", f"{Fore.RED}Download Searches Locally{Style.RESET_ALL} - Currently " + settings.get_Local())
     menu.add("b", "Back")
     menu.add("q", "Quit")
     return menu.show()
 
+def downloads_menu():
+    menu = qprompt.Menu()
+    menu.add("n", f"{Fore.RED}Download Names{Style.RESET_ALL}")
+    menu.add("dp", f"{Fore.RED}Download All Players{Style.RESET_ALL}")
+    menu.add("dt", f"{Fore.RED}Download All Teams{Style.RESET_ALL}")
+    return menu.show()
+
+
 def get_name(type):
-    return qprompt.ask_str(Fore.RED + type + Style.RESET_ALL + " - Enter their name")
+    return qprompt.ask_str(f"{Fore.RED}{type}{Style.RESET_ALL} - Enter their name")
+
 
 def get_year():
     return qprompt.ask_str("Enter a year span", valid=lambda x: bool(re.search('[0-9]{4}-[0-9]{2}', x)))
 
+
 def y_n_download():
     return qprompt.ask_yesno("This may take around 10 mins, do you want to continue?")
+
 
 def verify():
     sicher = qprompt.ask_yesno("Are you sure?")
