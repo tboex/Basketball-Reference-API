@@ -437,35 +437,8 @@ class Player:
         for stat_row in self.stats:
             if stat_row[0]:
                 obj['Stats'][stat_row[0]] = {}
-                obj['Stats'][stat_row[0]]["Age"] = stat_row[1]
-                obj['Stats'][stat_row[0]]["Team"] = stat_row[2]
-                obj['Stats'][stat_row[0]]["League"] = stat_row[3]
-                obj['Stats'][stat_row[0]]["Position"] = stat_row[4]
-                obj['Stats'][stat_row[0]]["Games"] = stat_row[5]
-                obj['Stats'][stat_row[0]]["Games_Started"] = stat_row[6]
-                obj['Stats'][stat_row[0]]["Minutes_Played"] = stat_row[7]
-                obj['Stats'][stat_row[0]]["Field_Goals"] = stat_row[8]
-                obj['Stats'][stat_row[0]]["Field_Goals_Attempted"] = stat_row[9]
-                obj['Stats'][stat_row[0]]["Field_Goal_Percentage"] = stat_row[10]
-                obj['Stats'][stat_row[0]]["3_Points"] = stat_row[11]
-                obj['Stats'][stat_row[0]]["3_Points_Attempted"] = stat_row[12]
-                obj['Stats'][stat_row[0]]["3_Points_Percentage"] = stat_row[13]
-                obj['Stats'][stat_row[0]]["2_Points"] = stat_row[14]
-                obj['Stats'][stat_row[0]]["2_Points_Attempted"] = stat_row[15]
-                obj['Stats'][stat_row[0]]["2_Points_Percentage"] = stat_row[16]
-                obj['Stats'][stat_row[0]]["Effective_Field_Goals"] = stat_row[17]
-                obj['Stats'][stat_row[0]]["Free_Throws"] = stat_row[18]
-                obj['Stats'][stat_row[0]]["Free_Throws_Attempted"] = stat_row[19]
-                obj['Stats'][stat_row[0]]["Free_Throws_Percentage"] = stat_row[20]
-                obj['Stats'][stat_row[0]]["Offensive_Rebounds"] = stat_row[21]
-                obj['Stats'][stat_row[0]]["Defensive_Rebounds"] = stat_row[22]
-                obj['Stats'][stat_row[0]]["Total_Rebounds"] = stat_row[23]
-                obj['Stats'][stat_row[0]]["Assists"] = stat_row[24]
-                obj['Stats'][stat_row[0]]["Steals"] = stat_row[25]
-                obj['Stats'][stat_row[0]]["Blocks"] = stat_row[26]
-                obj['Stats'][stat_row[0]]["Turnovers_Per_Game"] = stat_row[27]
-                obj['Stats'][stat_row[0]]["Personal_Fouls"] = stat_row[28]
-                obj['Stats'][stat_row[0]]["Points"] = stat_row[29]
+                for index, item in enumerate(stat_row):
+                    obj['Stats'][stat_row[0]][self.stat_headers[index]] = stat_row[index]
 
         obj['Shoots'] = self.shoots
 
