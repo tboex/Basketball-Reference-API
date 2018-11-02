@@ -100,7 +100,6 @@ def search_for_team(name):
                 team.to_file("history")
             if settings.get_JSON() == "True":
                 team.to_json_history()
-                pprint.pprint(vars(team))
         except:
             print("\n" + Fore.BLUE + name +
                   Style.RESET_ALL + "was not found as a team")
