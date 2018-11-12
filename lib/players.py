@@ -7,6 +7,7 @@ import pprint
 import datetime
 import json
 import lib.settings as settings
+import lib.data_harvest
 
 position_conv = {
     "Shooting": "SG",
@@ -15,7 +16,6 @@ position_conv = {
     "Small": "SF",
     "Power": "PF",
 }
-
 
 class Player:
     def __init__(self, name):
@@ -56,18 +56,22 @@ class Player:
         is_file = self.from_file()
         if is_file == False:
             print("No local data found, downloading now...")
-            URL = "https://www.basketball-reference.com/players/"
-            first_name = list(player_name[0])
-            last_name = list(''.join(player_name[1:]))
-            last_name_index = last_name[0]
+            players_dict = lib.data_harvest.get_players()[1]
+            URL = "https://www.basketball-reference.com"
+            if self.name in players_dict:
+                URL = URL + players_dict[self.name]
+            else:
+                first_name = list(player_name[0])
+                last_name = list(''.join(player_name[1:]))
+                last_name_index = last_name[0]
 
-            if len(last_name) > 5:
-                last_name = last_name[:5]
-            if len(first_name) > 2:
-                first_name = first_name[:2]
+                if len(last_name) > 5:
+                    last_name = last_name[:5]
+                if len(first_name) > 2:
+                    first_name = first_name[:2]
 
-            URL = URL + last_name_index.lower() + "/" + ''.join(last_name).lower() + \
-                ''.join(first_name).lower() + "01.html"
+                URL = URL + '/players' + last_name_index.lower() + '/' + ''.join(last_name).lower() + \
+                    ''.join(first_name).lower() + '01.html'
             r = requests.get(URL)
 
             self.clean_player_url(r.text, full)

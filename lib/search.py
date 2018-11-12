@@ -3,7 +3,7 @@ import lib.data_harvest as data_harvest
 
 
 def get_diff(inp):
-    data_inp = data_harvest.get_data()
+    data_inp, p_list = data_harvest.get_data()
 
     players = data_inp[0]
     teams = data_inp[1]
@@ -14,7 +14,7 @@ def get_diff(inp):
 
 
 def get_diff_teams(inp):
-    data_inp = data_harvest.get_data()
+    data_inp, p_list = data_harvest.get_data()
 
     teams = data_inp[1]
 
@@ -24,7 +24,7 @@ def get_diff_teams(inp):
 
 
 def get_diff_players(inp):
-    data_inp = data_harvest.get_data()
+    data_inp, p_list = data_harvest.get_data()
 
     players = data_inp[0]
 

@@ -3,6 +3,7 @@ import lib.teams as teams
 import lib.search as search
 import lib.data_harvest as data_harvest
 import lib.settings as settings
+import lib.data_visualization.player_visualization as player_visualization
 import progressbar
 import pprint
 import argparse
@@ -11,6 +12,7 @@ import shutil
 import os
 from colorama import Fore, Back, Style
 import datetime
+import shutil
 
 
 def main():
@@ -88,6 +90,10 @@ def search_for_player(name):
         player.to_file()
     if settings.get_JSON() == "True":
         player.to_json()
+    if settings.get_Visual() == "True":
+        print(settings.get_Visual())
+        visualize(player, None)
+
 
 def search_for_team(name):
     team = teams.Team(name)
@@ -148,7 +154,7 @@ def check_diff_teams(name):
 
 def download_players():
     notfound = []
-    player_list = data_harvest.get_players()
+    player_list, p_dict = data_harvest.get_players()
     print("Downloading All Players:")
     print("------------------------")
     with progressbar.ProgressBar(max_value=(len(player_list))) as bar:
@@ -182,19 +188,22 @@ def download_teams():
                 team.get_specific_year(str(itemx))
 
 
+def visualize(player, team):
+    if player:
+        vis = menu.player_visualize_menu()
+        if vis == "s":
+            option = menu.player_visualize_menu_single()
+            player_visualization.graph_player_stat(player, option)
+        #player_visualization.graph_player_stat_comparison(player, "FG", "FGA")
+
+
 def make_folders(folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
 
 def delete_folder(folder):
-    for the_file in os.listdir(folder):
-        file_path = os.path.join(folder, the_file)
-        try:
-            if os.path.isfile(file_path):
-                os.unlink(file_path)
-        except Exception as e:
-            print(e)
+    shutil.rmtree(folder)
 
 
 def do_compare(name1, name2):
@@ -268,6 +277,12 @@ def mainmenu():
             else:
                 settings.set_JSON("True")
             mainmenu()
+        elif inp == "v":
+            if settings.get_Visual() == "True":
+                settings.set_Visual("False")
+            else:
+                settings.set_Visual("True")
+            mainmenu()
         elif inp == "l":
             if settings.get_Local() == "True":
                 settings.set_Local("False")
@@ -289,3 +304,4 @@ def mainmenu():
 # ---- main ---
 if __name__ == "__main__":
     main()
+
