@@ -75,8 +75,6 @@ class Player:
             r = requests.get(URL)
 
             self.clean_player_url(r.text, full)
-        else:
-            print("\n - Local data found - ")
 
     def clean_player_url(self, html, full):
         soup = BeautifulSoup(html, 'html.parser')
@@ -285,57 +283,65 @@ class Player:
             self.salaries.append(temp)
 
     def pretty_print_player(self):
-        print("\033[1m\033[91m{}\n\033[0m".format(self.name))
-        print("-" * 20)
-        print("\033[1m\033[96m{}:\033[0m{} at {}".format(
+        print("\033[1m\033[91m\n{}\n\033[0m".format(self.name))
+        print("\033[1m\033[96m{}\033[0m".format("Info:"))
+        print("-" * 40)
+        print("\033[1m\033[96m {}:\033[0m{} at {}".format(
             "Build", self.height, self.weight))
-        print("\033[1m\033[96m{}\033[0m {}".format("Positions:", ', '.join(self.position)))
-        print("\033[1m\033[96m{}\033[0m{}".format("Shoots:", self.shoots))
-        print("\033[1m\033[96m{}\033[0m{}".format("Team:", self.team))
-        print("\033[1m\033[96m{}\033[0m{}".format("Born:", self.born))
+        print("\033[1m\033[96m {}\033[0m {}".format("Positions:", ', '.join(self.position)))
+        print("\033[1m\033[96m {}\033[0m{}".format("Shoots:", self.shoots))
+        print("\033[1m\033[96m {}\033[0m{}".format("Team:", self.team))
+        print("\033[1m\033[96m {}\033[0m{}".format("Born:", self.born))
 
         if self.college:
-            print("\033[1m\033[96m{}\033[0m{}".format(
+            print("\033[1m\033[96m {}\033[0m{}".format(
                 "College: ", self.college))
         if self.high_school:
-            print("\033[1m\033[96m{}\033[0m{}".format(
+            print("\033[1m\033[96m {}\033[0m{}".format(
                 "High School: ", self.high_school))
         if self.recruiting_rank:
-            print("\033[1m\033[96m{}\033[0m{}".format(
+            print("\033[1m\033[96m {}\033[0m{}".format(
                 "Recruiting Rank: ", self.recruiting_rank))
         if self.draft:
-            print("\033[1m\033[96m{}\033[0m{}".format("Draft: ", self.draft))
+            print("\033[1m\033[96m {}\033[0m{}".format("Draft: ", self.draft))
         if self.nba_debut:
-            print("\033[1m\033[96m{}\033[0m{}".format(
+            print("\033[1m\033[96m {}\033[0m{}".format(
                 "NBA Debut: ", self.nba_debut))
         if self.experience:
-            print("\033[1m\033[96m{}\033[0m{}".format(
+            print("\033[1m\033[96m {}\033[0m{}".format(
                 "Experience: ", self.experience))
         if self.awards:
-            print("\n\033[1m\033[96m\033[4mAwards:\033[0m")
+            print("\n\033[1m\033[96mAwards:\033[0m")
+            print("-" * 40)
             for award in self.awards:
                 print("  - {}".format(award))
         if self.transactions:
-            print("\n\033[1m\033[96m\033[4mTransactions:\033[0m")
+            print("\n\033[1m\033[96mTransactions:\033[0m")
+            print("-" * 40)
             for transaction in self.transactions:
                 print("  - {}".format(transaction))
         if self.projections:
-            print("\n\033[1m\033[96m\033[4m{} {}\033[0m".format(
+            print("\n\033[1m\033[96m{} {}\033[0m".format(
                 self.projection_year, "Projections:"))
+            print("-" * 40)
             print(tabulate(
                 [self.projections], headers=self.projections_headers, tablefmt='fancy_grid'))
         if self.contract:
-            print("\n\033[1m\033[96m\033[4mContract:\033[0m")
+            print("\n\033[1m\033[96mContract:\033[0m")
+            print("-" * 40)
             print(tabulate(self.contract, headers=self.contract_headers, tablefmt='fancy_grid'))
         if self.salaries:
-            print("\n\033[1m\033[96m\033[4mSalaries:\033[0m")
+            print("\n\033[1m\033[96mSalaries:\033[0m")
+            print("-" * 40)
             print(tabulate(
                 self.salaries, headers=self.salaries_headers, tablefmt='fancy_grid'))
         if self.stats:
-            print("\n\033[1m\033[96m\033[4mStats:\033[0m")
+            print("\n\033[1m\033[96mStats:\033[0m")
+            print("-" * 40)
             print(tabulate(self.stats, headers=self.stat_headers, tablefmt='fancy_grid'))
         if self.similarities_carrer_headers:
-            print("\n\033[1m\033[96m\033[4mSimularities:\033[0m")
+            print("\n\033[1m\033[96mSimularities:\033[0m")
+            print("-" * 40)
             print(tabulate(self.similarities_carrer,
                            headers=self.similarities_carrer_headers, tablefmt='fancy_grid'))
 
@@ -455,7 +461,8 @@ class Player:
 
         year_rank = self.recruiting_rank.split()
         obj['Recruiting_Rank'] = {}
-        obj['Recruiting_Rank'][year_rank[0]] = year_rank[1]
+        if year_rank:
+            obj['Recruiting_Rank'][year_rank[0]] = year_rank[1]
 
         obj['Positions'] = {}
         for index, pos in enumerate(self.position):

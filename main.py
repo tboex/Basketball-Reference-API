@@ -13,6 +13,7 @@ import os
 from colorama import Fore, Back, Style
 import datetime
 import shutil
+from pyfiglet import Figlet
 
 
 def main():
@@ -29,6 +30,8 @@ def main():
     make_folders("saved/teams/history/cache/")
     make_folders("saved/teams/specific/cache/")
     make_folders("saved/teams/specific/json/" + str_date + "/")
+
+    bigWord()
 
     parser = argparse.ArgumentParser(
         description='Find out the information of anything in the Basketball world')
@@ -60,6 +63,12 @@ def main():
         mainmenu()
 
 
+def bigWord():
+    #options = ['Basketball', '3 Pointer', 'Dunk', '2 Pointer', 'Dimer', 'Rebound', 'Foul', 'Free Throw', 'Fast Break', 'Posterize', 'Finisher']
+    f = Figlet(font='slant')
+    print(f.renderText('Rebound'))
+    print('-' * 50)
+
 def search_through_database(args, name):
     if args.p:
         search_for_player(name)
@@ -70,16 +79,11 @@ def search_through_database(args, name):
 
 
 def search_through_both(name):
-    try:
-        search_for_player(name)
-    except:
-        try:
-            search_for_team(name)
-        except:
-            print("\n" + Fore.BLUE + ''.join(name) + Style.RESET_ALL +
-                  " was not found as either a player or team")
-            input("\nPress Enter to Continue...")
-            mainmenu()
+    get_diff_players(name)
+    # try:
+    #     get_diff_players(name)
+    # except:
+    #     get_diff_teams(name)
 
 
 def search_for_player(name):
@@ -143,6 +147,16 @@ def check_diff_players(name):
     else:
         return diff_arr
 
+def get_diff_players(name):
+    diff_arr = check_diff_players(name)
+    if diff_arr == []:
+        print(f" - No player named {name} found")
+    elif diff_arr == None:
+        search_for_player(name)
+    else:
+        player = menu.diff_menu(diff_arr)
+        search_for_player(player)
+
 
 def check_diff_teams(name):
     diff_arr = search.get_diff_teams(name)
@@ -150,6 +164,15 @@ def check_diff_teams(name):
         return None
     else:
         return diff_arr
+
+
+def get_diff_teams(name):
+    diff_arr = check_diff_teams(name)
+    if diff_arr == None or diff_arr == []:
+        search_for_team(name)
+    else:
+        team = menu.diff_menu(diff_arr)
+        search_for_team(team)
 
 
 def download_players():
@@ -242,21 +265,9 @@ def do_compare(name1, name2):
 def mainmenu():
     choice = menu.main_menu()
     if choice == "p":
-        inp = menu.get_name("Player").title()
-        diff_arr = check_diff_players(inp)
-        if diff_arr == None or diff_arr == []:
-            search_for_player(inp)
-        else:
-            player = menu.diff_menu(diff_arr)
-            search_for_player(player)
+        get_diff_players(menu.get_name("Player").title())
     elif choice == "t":
-        inp = menu.get_name("Team").title()
-        diff_arr = check_diff_teams(inp)
-        if diff_arr == None or diff_arr == []:
-            search_for_team(inp)
-        else:
-            team = menu.diff_menu(diff_arr)
-            search_for_team(team)
+        get_diff_teams(menu.get_name("Team").title())
     elif choice == "c":
         do_compare(None, None)
     elif choice == "s":
