@@ -250,56 +250,60 @@ class Team:
 
     def pretty_print_team_history(self):
 
-        print("\n\033[1m\033[96m\033[4mTeam History:" + '\033[0m')
+        print('\n\033[1m\033[96mTeam History:\033[0m')
+        print("-" * 40)
         print(tabulate(self.team_stats,
                        headers=self.team_headers, tablefmt='fancy_grid'))
 
     def pretty_print_specific_team(self):
         print("\033[1m\033[91m\n" + self.name +
               "  " + self.specific_year + '\033[0m')
-        print("-" * 20)
+        print("-" * 40)
 
         if self.specific_year_record:
-            print("\033[1m\033[96m" + "Record: " +
+            print("\033[1m\033[96m " + "Record: " +
                   '\033[0m' + self.specific_year_record)
-            print("\033[1m\033[96m" + "Last Game: " +
+            print("\033[1m\033[96m " + "Last Game: " +
                   '\033[0m' + self.specific_year_lg)
-            print("\033[1m\033[96m" + "Coach: " +
+            print("\033[1m\033[96m " + "Coach: " +
                   '\033[0m' + self.specific_year_coach)
-            print("\033[1m\033[96m" + "Executive: " +
+            print("\033[1m\033[96m " + "Executive: " +
                   '\033[0m' + self.specific_year_executive)
-            print("\033[1m\033[96m" + "PTS/G: " +
+            print("\033[1m\033[96m " + "PTS/G: " +
                   '\033[0m' + self.specific_year_pts_g)
-            print("\033[1m\033[96m" + "Opp PTS/G: " +
+            print("\033[1m\033[96m " + "Opp PTS/G: " +
                   '\033[0m' + self.specific_year_opp_pts_g)
-            print("\033[1m\033[96m" + "SRS: " +
+            print("\033[1m\033[96m " + "SRS: " +
                   '\033[0m' + self.specific_year_srs)
-            print("\033[1m\033[96m" + "Pace: " +
+            print("\033[1m\033[96m " + "Pace: " +
                   '\033[0m' + self.specific_year_pace)
-            print("\033[1m\033[96m" + "Off Rtg: " +
+            print("\033[1m\033[96m " + "Off Rtg: " +
                   '\033[0m' + self.specific_year_off_rtg)
-            print("\033[1m\033[96m" + "Def Rtg: " +
+            print("\033[1m\033[96m " + "Def Rtg: " +
                   '\033[0m' + self.specific_year_def_rtg)
-            print("\033[1m\033[96m" + "W/L: " + '\033[0m' +
+            print("\033[1m\033[96m " + "W/L: " + '\033[0m' +
                   self.specific_year_expected_wl)
-            print("\033[1m\033[96m" + "Arena: " +
+            print("\033[1m\033[96m " + "Arena: " +
                   '\033[0m' + self.specific_year_arena)
-            print("\033[1m\033[96m" + "Playoffs: " +
+            print("\033[1m\033[96m " + "Playoffs: " +
                   '\033[0m' + self.specific_year_playoffs)
 
         if self.assistant_staff:
             print("\n\033[1m\033[91mAssistant Staff:" + '\033[0m')
+            print("-" * 40)
             for index in range(int(len(self.assistant_staff)/2)):
                 print("\033[1m\033[96m" + self.assistant_staff[index] +
                       '\033[0m -  ' + self.assistant_staff[index+1])
 
         if self.roster_headers:
             print("\n\033[1m\033[91m\033[4mRoster:" + '\033[0m')
+            print("-" * 40)
             print(tabulate(self.roster, headers=self.roster_headers,
                            tablefmt='fancy_grid'))
 
         if self.total_headers:
             print("\n\033[1m\033[91m\033[4mTotals:" + '\033[0m')
+            print("-" * 40)
             print(tabulate(self.total_stats,
                            headers=self.total_headers, tablefmt='fancy_grid'))
 

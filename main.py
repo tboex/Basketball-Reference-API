@@ -4,6 +4,8 @@ import lib.search as search
 import lib.data_harvest as data_harvest
 import lib.settings as settings
 import lib.data_visualization.player_visualization as player_visualization
+import lib.data_magic_player as dmp
+
 import progressbar
 import pprint
 import argparse
@@ -12,7 +14,6 @@ import shutil
 import os
 from colorama import Fore, Back, Style
 import datetime
-import shutil
 from pyfiglet import Figlet
 
 
@@ -178,6 +179,7 @@ def get_diff_teams(name):
 def download_players():
     notfound = []
     player_list, p_dict = data_harvest.get_players()
+    averages = dmp.DM_Player()
     print("Downloading All Players:")
     print("------------------------")
     with progressbar.ProgressBar(max_value=(len(player_list))) as bar:
@@ -187,8 +189,17 @@ def download_players():
             player = players.Player(item.replace('.', ''))
             try:
                 player.fetch_url(True)
+                averages.set_all(player)
+                averages.get_averages()
+                if settings.get_Local() == "True":
+                    player.to_file()
+                if settings.get_JSON() == "True":
+                    player.to_json()
             except:
                 notfound.append(item)
+    print("Getting Current Averages")
+    print("------------------------")
+    avg_obj = averages.get_averages()
 
 
 def download_teams():

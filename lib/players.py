@@ -20,6 +20,7 @@ position_conv = {
 class Player:
     def __init__(self, name):
         self.name = name
+        self.profile_link = ""
         self.height = ""
         self.weight = ""
         self.position = []
@@ -33,9 +34,13 @@ class Player:
         self.nba_debut = ""
         self.experience = ""
         self.awards = []
+        self.age = ""
 
         self.stat_headers = []
         self.stats = []
+
+        self.pbp_headers = []
+        self.pbp_stats = []
 
         self.similarities_carrer_headers = []
         self.similarities_carrer = []
@@ -51,11 +56,19 @@ class Player:
         self.contract_headers = []
         self.contract = []
 
+        self.current_stats = {}
+        self.current_year = self.set_current_year(datetime.datetime.today().year)
+        
+
+
+    def set_current_year(self, year):
+        appendage = year%100 + 1
+        return str(str(year) + "-" + str(appendage))
+
     def fetch_url(self, full):
         player_name = self.name.split()
         is_file = self.from_file()
         if is_file == False:
-            print("No local data found, downloading now...")
             players_dict = lib.data_harvest.get_players()[1]
             URL = "https://www.basketball-reference.com"
             if self.name in players_dict:
@@ -78,6 +91,7 @@ class Player:
 
     def clean_player_url(self, html, full):
         soup = BeautifulSoup(html, 'html.parser')
+        info = soup.find('div', attrs={'id': 'info'})
         basic_info = soup.find(
             'div', attrs={'itemtype': 'https://schema.org/Person'})
         bling = soup.find(
@@ -96,7 +110,11 @@ class Player:
             'div', attrs={'id': 'all_all_salaries'})
         contract = soup.find(
             'div', attrs={'id': 'all_contracts_bos'})
+        play_by_play = soup.find(
+            'div', attrs={'id': 'all_advanced_pbp'})
+
         self.get_basic_info(basic_info)
+        self.profile_link = info.find('img')['src']
 
         if bling:
             self.get_bling(bling)
@@ -114,6 +132,8 @@ class Player:
             self.get_contract(contract)
         if salaries:
             self.get_salaries(salaries)
+        if play_by_play:
+            self.get_play_by_play(play_by_play)
 
 
     def get_basic_info(self, basic_info):
@@ -194,8 +214,11 @@ class Player:
             for info in row.find_all('td'):
                 temp.append(info.text.strip())
             self.stats.append(temp)
-        [self.stat_headers.append(item)
-         for item in summary.text.strip().split()]
+            if self.current_year in temp:
+                self.set_current_stats(temp)
+                
+
+        [self.stat_headers.append(item) for item in summary.text.strip().split()]
         footer = html.find('tfoot')
         rows = footer.find_all('tr')
         for row in rows:
@@ -205,6 +228,62 @@ class Player:
             for info in row.find_all('td'):
                 temp.append(info.text.strip())
             self.stats.append(temp)
+
+    def set_current_stats(self, arr):
+        self.current_stats['age'] = arr[1]
+        self.current_stats['position'] = arr[4]
+        self.current_stats['games'] = arr[5]
+        self.current_stats['minutes_played'] = arr[7]
+        self.current_stats['fg'] = arr[8]
+        self.current_stats['fga'] = arr[9]
+        self.current_stats['fg_per'] = arr[10]
+        self.current_stats['3fg'] = arr[11]
+        self.current_stats['3fga'] = arr[12]
+        self.current_stats['3fg_per'] = arr[13]
+        self.current_stats['efg_per'] = arr[17]
+        self.current_stats['ft'] = arr[18]
+        self.current_stats['fta'] = arr[19]
+        self.current_stats['ft_per'] = arr[20]
+        self.current_stats['orb'] = arr[21]
+        self.current_stats['drb'] = arr[22]
+        self.current_stats['trb'] = arr[23]
+        self.current_stats['ast'] = arr[24]
+        self.current_stats['stl'] = arr[25]
+        self.current_stats['blk'] = arr[26]
+        self.current_stats['tov'] = arr[27]
+        self.current_stats['pf'] = arr[28]
+        self.current_stats['pts'] = arr[29]
+
+    def get_play_by_play(self, html):
+        soup = BeautifulSoup(str(html).replace(
+            '-->', '').replace('<!--', ''), 'html.parser')
+        table = soup.find('table', attrs={'id': 'advanced_pbp'})
+        summary = table.find('thead')
+        tbody = table.find('tbody')
+
+        self.pbp_headers = summary.text.strip().split()
+        self.pbp_headers = self.pbp_headers[self.pbp_headers.index("Season"):]
+
+        for row in tbody.find_all('tr'):
+            temp = []
+            season = row.find('th')
+            if season:
+                temp.append(season.text.strip())
+            for info in row.find_all('td'):
+                temp.append(info.text.strip())
+            if self.current_year in temp:
+                self.age = temp[1]
+            self.pbp_stats.append(temp)
+        
+        footer = table.find('tfoot')
+        rows = footer.find_all('tr')
+        for row in rows:
+            temp = []
+            season = row.find('th')
+            temp.append(season.text.strip())
+            for info in row.find_all('td'):
+                temp.append(info.text.strip())
+            self.pbp_stats.append(temp)
 
     def get_similarities(self, similarity):
         soup = BeautifulSoup(str(similarity).replace(
@@ -286,6 +365,7 @@ class Player:
         print("\033[1m\033[91m\n{}\n\033[0m".format(self.name))
         print("\033[1m\033[96m{}\033[0m".format("Info:"))
         print("-" * 40)
+        print("\033[1m\033[96m {}\033[0m {}".format("Age:", self.age))
         print("\033[1m\033[96m {}:\033[0m{} at {}".format(
             "Build", self.height, self.weight))
         print("\033[1m\033[96m {}\033[0m {}".format("Positions:", ', '.join(self.position)))
@@ -339,6 +419,10 @@ class Player:
             print("\n\033[1m\033[96mStats:\033[0m")
             print("-" * 40)
             print(tabulate(self.stats, headers=self.stat_headers, tablefmt='fancy_grid'))
+        if self.pbp_stats:
+            print("\n\033[1m\033[96mPlay-by-Play Stats:\033[0m")
+            print("-" * 40)
+            print(tabulate(self.pbp_stats, headers=self.pbp_headers, tablefmt='fancy_grid'))
         if self.similarities_carrer_headers:
             print("\n\033[1m\033[96mSimularities:\033[0m")
             print("-" * 40)
@@ -418,7 +502,6 @@ class Player:
         str_date = str(date.year) + "-" + str(date.month)
         filename = "saved/players/cache/{}/{}.pkl".format(
             str_date, self.name.replace(" ", "_"))
-
         try:
             pkl_file = open(filename, 'rb')
             data = pickle.load(pkl_file)
@@ -436,6 +519,12 @@ class Player:
             str_date, self.name.replace(" ", "_"))
         obj = {}
         obj['Weight'] = self.weight
+
+        obj['Age'] = self.age
+
+        obj['Current_Year'] = self.current_year
+
+        obj['Profile_Pic'] = self.profile_link
 
         obj['Transactions'] = {}
         for index, transaction in enumerate(self.transactions):
