@@ -8,6 +8,7 @@ def load_settings():
     Config.set('Settings','JSON', get_JSON())
     Config.set('Settings','Local', get_Local())
     Config.set('Settings','Visual', get_Visual())
+    Config.set('Settings','SQL', get_SQL())
 
 def save_settings():
     with open('saved/settings.ini', 'w') as configfile:
@@ -32,4 +33,11 @@ def get_Visual():
 
 def set_Visual(inp):
     Config.set('Settings','Visual', str(inp))
+    save_settings()
+
+def get_SQL():
+    return Config.get('Settings', 'SQL')
+
+def set_SQL(inp):
+    Config.set('Settings','SQL', str(inp))
     save_settings()

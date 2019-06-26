@@ -90,9 +90,9 @@ class Team:
                 URL = URL + team_list[self.name.split()[-1].lower()]
                 html = ""
                 try:
-                    with urllib.request.urlopen(URL) as response:
+                    with requests.get(URL) as response:
                         # use whatever encoding as per the webpage
-                        html = response.read().decode('utf-8')
+                        html = response.text
                 except urllib.request.HTTPError as e:
                     if e.code == 404:
                         print(f"{URL} is not found")
@@ -140,9 +140,9 @@ class Team:
                 URL = URL + self.team_links[year]
                 html = ""
                 try:
-                    with urllib.request.urlopen(URL) as response:
+                    with requests.get(URL) as response:
                         # use whatever encoding as per the webpage
-                        html = response.read().decode('utf-8')
+                        html = response.text
                 except urllib.request.HTTPError as e:
                     if e.code == 404:
                         print(f"{URL} is not found")

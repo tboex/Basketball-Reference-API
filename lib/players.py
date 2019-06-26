@@ -8,6 +8,8 @@ import datetime
 import json
 import lib.settings as settings
 import lib.data_harvest
+import lib.data_magic_player as dmp
+import lib.sql_lib.sqlizer as sqlizer
 
 position_conv = {
     "Shooting": "SG",
@@ -26,6 +28,7 @@ class Player:
         self.position = []
         self.shoots = ""
         self.team = ""
+        self.team_colors = None
         self.born = ""
         self.college = ""
         self.high_school = ""
@@ -58,14 +61,24 @@ class Player:
 
         self.current_stats = {}
         self.current_year = self.set_current_year(datetime.datetime.today().year)
-        
 
+        self.percentiles = {}
+        self.percentiles_arr = []
+        self.percentiles_headers = []
+        
+    def fetch_player(self, full=True):
+        player_data = self.fetch_url()
+        cleaned_player_data = self.clean_player_url(player_data, full)
 
     def set_current_year(self, year):
+        future_opener = datetime.date(year, 11, 16)
+
+        if datetime.date.today() < future_opener:
+            year = year - 1
         appendage = year%100 + 1
         return str(str(year) + "-" + str(appendage))
 
-    def fetch_url(self, full):
+    def fetch_url(self):
         player_name = self.name.split()
         is_file = self.from_file()
         if is_file == False:
@@ -83,11 +96,10 @@ class Player:
                 if len(first_name) > 2:
                     first_name = first_name[:2]
 
-                URL = URL + '/players' + last_name_index.lower() + '/' + ''.join(last_name).lower() + \
+                URL = URL + '/players/' + last_name_index.lower() + '/' + ''.join(last_name).lower() + \
                     ''.join(first_name).lower() + '01.html'
             r = requests.get(URL)
-
-            self.clean_player_url(r.text, full)
+            return (r.text)
 
     def clean_player_url(self, html, full):
         soup = BeautifulSoup(html, 'html.parser')
@@ -111,15 +123,19 @@ class Player:
         contract = soup.find(
             'div', attrs={'id': 'all_contracts_bos'})
         play_by_play = soup.find(
-            'div', attrs={'id': 'all_advanced_pbp'})
+            'div', attrs={'id': 'all_pbp'})
 
         self.get_basic_info(basic_info)
-        self.profile_link = info.find('img')['src']
+        try:
+            self.profile_link = info.find('img')['src']
+        except:
+            self.profile_link = None
 
         if bling:
             self.get_bling(bling)
         if full_stats and full:
             self.get_full_stats(full_stats)
+            self.compare_to_averages()
         elif stats:
             self.get_summary_stats(stats)
         if similarity_carrer:
@@ -134,47 +150,53 @@ class Player:
             self.get_salaries(salaries)
         if play_by_play:
             self.get_play_by_play(play_by_play)
+        self.team_colors = self.team_to_colors()
 
+    def get_data_points(self, soup):
+        pass
 
     def get_basic_info(self, basic_info):
-        info_arr = []
-        self.name = basic_info.find(
-            'h1', attrs={'itemprop': 'name'}).text.strip()
-        for p in basic_info.find_all('p'):
-            info_arr.append(p.text.strip().split())
-        for index, info in enumerate(info_arr):
-            if "Position:" in info:
-                position = info[info.index(
-                    "Position:") + 1:info.index("Shoots:")-1]
-                for pos in position:
-                    if pos in position_conv:
-                        self.position.append(position_conv[pos])
-                bio_arr = info_arr[index + 1]
-                self.height, self.weight = bio_arr[0].replace(
-                    ',', ''), bio_arr[1].replace(',', '')
-            if "Shoots:" in info:
-                self.shoots = info[info.index("Shoots:") + 1]
-            if "Team:" in info:
-                self.team = ' '.join(info[info.index("Team:") + 1:])
-            if "Born:" in info:
-                self.born = ' '.join(
-                    info[info.index("Born:")+1:]).replace(',', '')
-            if "College:" in info:
-                self.college = ' '.join(info[info.index("College:")+1:])
-            if "School:" in info:
-                self.high_school = ' '.join(
-                    info[info.index("School:")+1:]).replace(',', '')
-            if "Rank:" in info:
-                self.recruiting_rank = ' '.join(
-                    info[info.index("Rank:")+1:]).replace('(', '').replace(')', '')
-            if "Debut:" in info:
-                self.nba_debut = ' '.join(
-                    info[info.index("Debut:")+1:]).replace(',', '')
-            if "Experience:" in info:
-                self.experience = ' '.join(info[info.index("Experience:")+1:])
-            if "Draft:" in info:
-                self.draft = ' '.join(
-                    info[info.index("Draft:")+1:]).replace(',', '')
+        try:
+            info_arr = []
+            self.name = basic_info.find(
+                'h1', attrs={'itemprop': 'name'}).text.strip()
+            for p in basic_info.find_all('p'):
+                info_arr.append(p.text.strip().split())
+            for index, info in enumerate(info_arr):
+                if "Position:" in info:
+                    position = info[(info.index("Position:") + 1): (info.index("Shoots:") - 1)]
+                    for pos in position:
+                        if pos in position_conv:
+                            self.position.append(position_conv[pos])
+                    bio_arr = info_arr[index + 1]
+                    self.height, self.weight = bio_arr[0].replace(
+                        ',', ''), bio_arr[1].replace(',', '')
+                if "Shoots:" in info:
+                    self.shoots = info[info.index("Shoots:") + 1]
+                if "Team:" in info:
+                    self.team = ' '.join(info[info.index("Team:") + 1:])
+                if "Born:" in info:
+                    self.born = ' '.join(
+                        info[info.index("Born:")+1:]).replace(',', '')
+                if "College:" in info:
+                    self.college = ' '.join(info[info.index("College:")+1:])
+                if "School:" in info:
+                    self.high_school = ' '.join(
+                        info[info.index("School:")+1:]).replace(',', '')
+                if "Rank:" in info:
+                    self.recruiting_rank = ' '.join(
+                        info[info.index("Rank:")+1:]).replace('(', '').replace(')', '')
+                if "Debut:" in info:
+                    self.nba_debut = ' '.join(
+                        info[info.index("Debut:")+1:]).replace(',', '')
+                if "Experience:" in info:
+                    self.experience = ' '.join(info[info.index("Experience:")+1:])
+                if "Draft:" in info:
+                    self.draft = ' '.join(
+                        info[info.index("Draft:")+1:]).replace(',', '')
+        except Exception as e:
+            print("\nError with " + self.name)
+            print(e)
 
     def get_bling(self, bling):
         try:
@@ -254,16 +276,53 @@ class Player:
         self.current_stats['pf'] = arr[28]
         self.current_stats['pts'] = arr[29]
 
+    def team_to_colors(self):
+        color_dict = {
+            "Atlanta Hawks": ('#e03a3e', '#C1D32F', '#26282A'),
+            "Boston Celtics": ('#007A33', '#BA9653', '#963821'),
+            "Brooklyn Nets": ('#000000', '#FFFFFF'),
+            "Charlotte Hornets": ('#1d1160', '#00788C', '#A1A1A4'),
+            "Chicago Bulls": ('#CE1141', '#000000'),
+            "Cleveland Cavaliers": ('#6F263D', '#041E42', '#FFB81C'),
+            "Dallas Mavericks": ('#00538C', '#002B5e', '#B8C4CA'),
+            "Denver Nuggets": ('#0E2240', '#FEC524', '#8B2131'),
+            "Detroit Pistons": ('#C8102E', '#006BB6', '#bec0c2'),
+            "Golden State Warriors": ('#006BB6', '#FDB927', '#26282A'),
+            "Houston Rockets": ('#CE1141', '#000000', '#C4CED4'),
+            "Indiana Pacers": ('#002D62', '#FDBB30', '#BEC0C2'),
+            "Los Angeles Clippers": ('#c8102E', '#1d42ba', '#BEC0C2'),
+            "Los Angeles Lakers": ('#552583', '#FDB927', '#000000'),
+            "Memphis Grizzlies": ('#5D76A9', '#12173F', '#F5B112'),
+            "Miami Heat": ('#98002E', '#F9A01B', '#000000'),
+            'Milwaukee Bucks': ('#00471B', '#EEE1C6', '#000000'),
+            'Minnesota Timberwolves': ('#0C2340', '#236192', '#78BE20'),
+            'New Orleans Pelicans': ('#0C2340', '#C8102E', '#85714D'),
+            'New York Knicks': ('#006BB6', '#F58426', '#BEC0C2'),
+            'Oklahoma City Thunder': ('#007ac1', '#ef3b24', '#002D62'),
+            'Orlando Magic': ('#0077c0', '#C4ced4', '#000000'),
+            'Philadelphia 76ers': ('#006bb6', '#ed174c', '#002B5C'),
+            'Phoenix Suns': ('#1d1160', '#e56020', '#000000'),
+            'Portland Trail Blazers': ('#E03A3E', '#000000'),
+            'Sacramento Kings': ('#5a2d81', '#63727A', '#000000'),
+            'San Antonio Spurs': ('#c4ced4', '#000000'),
+            'Toronto Raptors': ('#ce1141', '#000000', '#A1A1A4'),
+            'Utah Jazz': ('#002B5C', '#00471B', '#F9A01B'),
+            'Washington Wizards': ('#002B5C', '#e31837', '#C4CED4')
+        }
+        if self.team in color_dict:
+            return color_dict[self.team]
+        else:
+            return None
+
     def get_play_by_play(self, html):
         soup = BeautifulSoup(str(html).replace(
             '-->', '').replace('<!--', ''), 'html.parser')
-        table = soup.find('table', attrs={'id': 'advanced_pbp'})
+        table = soup.find('table', attrs={'id': 'pbp'})
         summary = table.find('thead')
         tbody = table.find('tbody')
 
         self.pbp_headers = summary.text.strip().split()
         self.pbp_headers = self.pbp_headers[self.pbp_headers.index("Season"):]
-
         for row in tbody.find_all('tr'):
             temp = []
             season = row.find('th')
@@ -308,6 +367,16 @@ class Player:
         div = soup.find('div', attrs={'id': 'div_transactions'})
         for p in div.find_all('p'):
             self.transactions.append(p.text.strip())
+
+    def compare_to_averages(self):
+        if self.current_stats:
+            average_engine = dmp.DM_Player()
+            if average_engine.from_file():
+                self.percentiles = average_engine.get_percentiles(self)
+
+                for key in self.percentiles:
+                    self.percentiles_arr.append(self.percentiles[key])
+                    self.percentiles_headers.append(key)
 
     def get_projections(self, html):
         html = html.find('table')
@@ -401,33 +470,24 @@ class Player:
             for transaction in self.transactions:
                 print("  - {}".format(transaction))
         if self.projections:
-            print("\n\033[1m\033[96m{} {}\033[0m".format(
-                self.projection_year, "Projections:"))
-            print("-" * 40)
-            print(tabulate(
-                [self.projections], headers=self.projections_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array((self.projection_year + " Projections"), [self.projections], self.projections_headers)
         if self.contract:
-            print("\n\033[1m\033[96mContract:\033[0m")
-            print("-" * 40)
-            print(tabulate(self.contract, headers=self.contract_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array(("Contract"), self.contract, self.contract_headers)
         if self.salaries:
-            print("\n\033[1m\033[96mSalaries:\033[0m")
-            print("-" * 40)
-            print(tabulate(
-                self.salaries, headers=self.salaries_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array(("Salaries"), self.salaries, self.salaries_headers)
         if self.stats:
-            print("\n\033[1m\033[96mStats:\033[0m")
-            print("-" * 40)
-            print(tabulate(self.stats, headers=self.stat_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array(("Stats"), self.stats, self.stat_headers)
         if self.pbp_stats:
-            print("\n\033[1m\033[96mPlay-by-Play Stats:\033[0m")
-            print("-" * 40)
-            print(tabulate(self.pbp_stats, headers=self.pbp_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array(("Play-by-Play Stats"), self.pbp_stats, self.pbp_headers)
+        if self.percentiles:
+            self.pretty_print_array(("Percentiles"), [self.percentiles_arr], self.percentiles_headers)
         if self.similarities_carrer_headers:
-            print("\n\033[1m\033[96mSimularities:\033[0m")
-            print("-" * 40)
-            print(tabulate(self.similarities_carrer,
-                           headers=self.similarities_carrer_headers, tablefmt='fancy_grid'))
+            self.pretty_print_array(("Simularities"), self.similarities_carrer, self.similarities_carrer_headers)
+
+    def pretty_print_array(self, title, data_arr, header_arr):
+        print("\n\033[1m\033[96m{}:\033[0m".format(title))
+        print("-" * 40)
+        print(tabulate(data_arr, headers=header_arr, tablefmt='fancy_grid'))
 
     def compare(self, altPlayer):
         headers_comparison = [" "]
@@ -524,6 +584,8 @@ class Player:
 
         obj['Current_Year'] = self.current_year
 
+        obj['Current_Stats'] = self.current_stats
+
         obj['Profile_Pic'] = self.profile_link
 
         obj['Transactions'] = {}
@@ -531,6 +593,8 @@ class Player:
             obj['Transactions'][index] = transaction 
 
         obj['Team'] = self.team
+
+        obj['Team_Colors'] = self.team_colors
 
         obj['Stats'] = {}
         for stat_row in self.stats:
@@ -564,6 +628,9 @@ class Player:
         obj['Experience'] = self.experience
         obj['Draft'] = self.draft
         obj['Contract'] = {}
+
+        obj['Percentiles'] = self.percentiles
+
         for index, contract in enumerate(self.contract):
             if contract:
                 obj['Contract'][index] = {}
@@ -577,3 +644,18 @@ class Player:
             obj['Awards'][index] = award
         with open(filename, 'w') as outfile:
             json.dump(obj, outfile)
+
+    def to_sql(self):
+        conn = sqlizer.create_connection("saved/sqlite/pythonsqlite.db")
+        if sqlizer.create_all_tables(conn):
+            sqlizer.create_player(conn, self.name, self)
+            for row in self.stats:
+                if row[0] != "":
+                    sqlizer.create_stat(conn, self.name, row)
+            for row in self.pbp_stats:
+                if row[0] != "":
+                    sqlizer.create_play_by_play(conn, self.name, row)
+        conn.commit()
+        conn.close()
+
+        

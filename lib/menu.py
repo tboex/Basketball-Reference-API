@@ -36,6 +36,7 @@ def settings_menu():
     menu.add("c", f"{Fore.RED}Clear Cache{Style.RESET_ALL}")
     menu.add("j", f"{Fore.RED}Download Searches as JSON{Style.RESET_ALL} - Currently " + settings.get_JSON())
     menu.add("l", f"{Fore.RED}Download Searches Locally{Style.RESET_ALL} - Currently " + settings.get_Local())
+    menu.add("l", f"{Fore.RED}Download Searches to SQL{Style.RESET_ALL} - Currently " + settings.get_SQL())
     menu.add("v", f"{Fore.RED}Visualize Searches{Style.RESET_ALL} - Currently " + settings.get_Visual())
     menu.add("b", "Back")
     menu.add("q", "Quit")
@@ -47,24 +48,6 @@ def downloads_menu():
     menu.add("n", f"{Fore.RED}Download Names{Style.RESET_ALL}")
     menu.add("dp", f"{Fore.RED}Download All Players{Style.RESET_ALL}")
     menu.add("dt", f"{Fore.RED}Download All Teams{Style.RESET_ALL}")
-    return menu.show()
-
-
-def player_visualize_menu_single():
-    menu = qprompt.Menu()
-    for index, item in enumerate(STAT_HEADERS):
-        menu.add(str(index), item)
-    menu.add("b", "Back")
-    menu.add("q", "Quit")
-    return menu.show(returns="desc")
-
-
-def player_visualize_menu():
-    print("\nVisualize this players stats:")
-    menu = qprompt.Menu()
-    menu.add("s", f"{Fore.BLUE}Single Stat{Style.RESET_ALL}")
-    menu.add("c", f"{Fore.BLUE}Compare{Style.RESET_ALL}")
-    menu.add("q", "Quit")
     return menu.show()
 
 
