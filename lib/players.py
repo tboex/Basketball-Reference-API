@@ -6,10 +6,12 @@ import pickle
 import pprint
 import datetime
 import json
+
 import lib.settings as settings
 import lib.data_harvest
 import lib.data_magic_player as dmp
 import lib.sql_lib.sqlizer as sqlizer
+from lib.data_structures import Field
 
 position_conv = {
     "Shooting": "SG",
@@ -68,7 +70,10 @@ class Player:
         
     def fetch_player(self, full=True):
         player_data = self.fetch_url()
-        cleaned_player_data = self.clean_player_url(player_data, full)
+        if player_data:
+            cleaned_player_data = self.clean_player_url(player_data)
+            data_points = self.get_data_points(cleaned_player_data)
+            self.get_info_from_data_points(data_points)
 
     def set_current_year(self, year):
         future_opener = datetime.date(year, 11, 16)
@@ -100,60 +105,35 @@ class Player:
                     ''.join(first_name).lower() + '01.html'
             r = requests.get(URL)
             return (r.text)
+        else:
+            return None
 
-    def clean_player_url(self, html, full):
-        soup = BeautifulSoup(html, 'html.parser')
-        info = soup.find('div', attrs={'id': 'info'})
-        basic_info = soup.find(
-            'div', attrs={'itemtype': 'https://schema.org/Person'})
-        bling = soup.find(
-            'ul', attrs={"id": "bling"})
-        stats = soup.find(
-            'div', attrs={'class': 'stats_pullout'})
-        full_stats = soup.find(
-            'table', attrs={'id': 'per_game'})
-        similarity_carrer = soup.find(
-            'div', attrs={'id': 'all_sim_career'})
-        transactions = soup.find(
-            'div', attrs={'id': 'all_transactions'})
-        projections = soup.find(
-            'div', attrs={'id': 'all_projection'})
-        salaries = soup.find(
-            'div', attrs={'id': 'all_all_salaries'})
-        contract = soup.find(
-            'div', attrs={'id': 'all_contracts_bos'})
-        play_by_play = soup.find(
-            'div', attrs={'id': 'all_pbp'})
-
-        self.get_basic_info(basic_info)
-        try:
-            self.profile_link = info.find('img')['src']
-        except:
-            self.profile_link = None
-
-        if bling:
-            self.get_bling(bling)
-        if full_stats and full:
-            self.get_full_stats(full_stats)
-            self.compare_to_averages()
-        elif stats:
-            self.get_summary_stats(stats)
-        if similarity_carrer:
-            self.get_similarities(similarity_carrer)
-        if transactions:
-            self.get_transactions(transactions)
-        if projections:
-            self.get_projections(projections)
-        if contract:
-            self.get_contract(contract)
-        if salaries:
-            self.get_salaries(salaries)
-        if play_by_play:
-            self.get_play_by_play(play_by_play)
-        self.team_colors = self.team_to_colors()
+    def clean_player_url(self, html):
+        return BeautifulSoup(html, 'html.parser')
 
     def get_data_points(self, soup):
-        pass
+        return {
+            "info": Field(soup.find('div', attrs={'id': 'info'}), ),
+            "basic_info": Field(soup.find('div', attrs={'itemtype': 'https://schema.org/Person'}), Player.get_basic_info),
+            "bling": Field(soup.find('ul', attrs={"id": "bling"}), Player.get_bling),
+            "stats": Field(soup.find('div', attrs={'class': 'stats_pullout'}), Player.get_summary_stats),
+            "full_stats": Field(soup.find('table', attrs={'id': 'per_game'}), Player.get_full_stats),
+            "similarity_carrer": Field(soup.find('div', attrs={'id': 'all_sim_career'}), Player.get_similarities),
+            "transactions": Field(soup.find('div', attrs={'id': 'all_transactions'}), Player.get_transactions),
+            "projections": Field(soup.find('div', attrs={'id': 'all_projection'}), Player.get_projections),
+            "salaries": Field(soup.find('div', attrs={'id': 'all_all_salaries'}), Player.get_salaries),
+            "contract": Field(soup.find('div', attrs={'id': 'all_contracts_bos'}), Player.get_contract),
+            "play_by_play": Field(soup.find('div', attrs={'id': 'all_pbp'}), Player.get_play_by_play),
+        }
+        
+    def get_info_from_data_points(self, data_points):
+        for key in data_points:
+            field = data_points[key]
+            if field.data:
+                field.transform_func(self, field.data)
+        
+        self.profile_link = data_points.get('info').find('img')['src']
+        self.team_colors = self.team_to_colors()
 
     def get_basic_info(self, basic_info):
         try:
@@ -195,8 +175,7 @@ class Player:
                     self.draft = ' '.join(
                         info[info.index("Draft:")+1:]).replace(',', '')
         except Exception as e:
-            print("\nError with " + self.name)
-            print(e)
+            print("{} Error : with {}".format(e, self.name))
 
     def get_bling(self, bling):
         try:
