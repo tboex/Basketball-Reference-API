@@ -113,7 +113,7 @@ class Player:
 
     def get_data_points(self, soup):
         return {
-            "info": Field(soup.find('div', attrs={'id': 'info'}), ),
+            "info": soup.find('div', attrs={'id': 'info'}),
             "basic_info": Field(soup.find('div', attrs={'itemtype': 'https://schema.org/Person'}), Player.get_basic_info),
             "bling": Field(soup.find('ul', attrs={"id": "bling"}), Player.get_bling),
             "stats": Field(soup.find('div', attrs={'class': 'stats_pullout'}), Player.get_summary_stats),
@@ -129,7 +129,7 @@ class Player:
     def get_info_from_data_points(self, data_points):
         for key in data_points:
             field = data_points[key]
-            if field.data:
+            if field.data and isinstance(field, Field):
                 field.transform_func(self, field.data)
         
         self.profile_link = data_points.get('info').find('img')['src']
@@ -622,19 +622,4 @@ class Player:
         for index, award in enumerate(self.awards):
             obj['Awards'][index] = award
         with open(filename, 'w') as outfile:
-            json.dump(obj, outfile)
-
-    def to_sql(self):
-        conn = sqlizer.create_connection("saved/sqlite/pythonsqlite.db")
-        if sqlizer.create_all_tables(conn):
-            sqlizer.create_player(conn, self.name, self)
-            for row in self.stats:
-                if row[0] != "":
-                    sqlizer.create_stat(conn, self.name, row)
-            for row in self.pbp_stats:
-                if row[0] != "":
-                    sqlizer.create_play_by_play(conn, self.name, row)
-        conn.commit()
-        conn.close()
-
-        
+            json.dump(obj, outfile)        

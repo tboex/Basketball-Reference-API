@@ -3,10 +3,9 @@ import lib.teams as teams
 import lib.search as search
 import lib.data_harvest as data_harvest
 import lib.settings as settings
-import lib.data_visualization.player_visualization as player_visualization
 import lib.data_magic_player as dmp
 
-import progressbar
+from tqdm import tqdm
 import pprint
 import argparse
 import lib.menu as menu
@@ -23,6 +22,7 @@ def main():
     str_date = str(date.year) + "-" + str(date.month)
     make_folders("saved/")
     make_folders("saved/localcache/")
+    make_folders("saved/sqlite/")
     make_folders("saved/players/cache/")
     make_folders("saved/players/json/" + str_date + "/")
     make_folders("saved/players/cache/" + str_date + "/")
@@ -65,7 +65,6 @@ def main():
 
 
 def bigWord():
-    #options = ['Basketball', '3 Pointer', 'Dunk', '2 Pointer', 'Dimer', 'Rebound', 'Foul', 'Free Throw', 'Fast Break', 'Posterize', 'Finisher']
     f = Figlet(font='slant')
     print(f.renderText('Rebound'))
     print('-' * 50)
@@ -89,48 +88,36 @@ def search_through_both(name):
 
 def search_for_player(name):
     player = players.Player(name)
-    player.fetch_url(True)
+    player.fetch_player()
     player.pretty_print_player()
     if settings.get_Local() == "True":
         player.to_file()
     if settings.get_JSON() == "True":
         player.to_json()
-    if settings.get_Visual() == "True":
-        print(settings.get_Visual())
-        visualize(player, None)
 
 
 def search_for_team(name):
-    team = teams.Team(name)
     choice = menu.hist_or_spec_team()
+    team = teams.TeamHistory(name)
+    team.fetch_team()
     if choice == "h":
-        try:
-            team.get_team_history()
-            team.pretty_print_team_history()
-            if settings.get_Local() == "True":
-                team.to_file("history")
-            if settings.get_JSON() == "True":
-                team.to_json_history()
-        except:
-            print("\n" + Fore.BLUE + name +
-                  Style.RESET_ALL + "was not found as a team")
-            input("\nPress Enter to Continue...")
-            mainmenu()
+        team.fetch_team()
+        team.pretty_print()
+        if settings.get_Local() == "True":
+            team.to_file("history")
+        if settings.get_JSON() == "True":
+            team.to_json()
     elif choice == "s":
         year = menu.get_year()
-        try:
-            team.get_team_history()
-            team.get_specific_year(year)
-            team.pretty_print_specific_team()
-            if settings.get_Local() == "True":
-                team.to_file("specific")
-            if settings.get_JSON() == "True":
-                team.to_json_specific()
-        except:
-            print("\n" + Fore.BLUE + name +
-                  Style.RESET_ALL + "was not found as a team")
-            input("\nPress Enter to Continue...")
-            mainmenu()
+        team_year_links = team.get_team_links()
+        specific_team = teams.TeamSpecific(name, year, team_year_links)
+        specific_team.fetch_team_specifics()
+        specific_team.pretty_print()
+
+        if settings.get_Local() == "True":
+            team.to_file("specific")
+        if settings.get_JSON() == "True":
+            team.to_json()
 
 
 def check_diff(name):
@@ -151,7 +138,7 @@ def check_diff_players(name):
 def get_diff_players(name):
     diff_arr = check_diff_players(name)
     if diff_arr == []:
-        print(f" - No player named {name} found")
+        print(" - No player named {} found".format(name))
     elif diff_arr == None:
         search_for_player(name)
     else:
@@ -177,29 +164,29 @@ def get_diff_teams(name):
 
 
 def download_players():
-    notfound = []
     player_list, p_dict = data_harvest.get_players()
     averages = dmp.DM_Player()
-    print("Downloading All Players:")
+    print("Downloading All Players: (Go Shoot some baskets while you wait)")
     print("------------------------")
-    with progressbar.ProgressBar(max_value=(len(player_list))) as bar:
-        for index, item in enumerate(player_list):
-            if index % 10:
-                bar.update(index)
-            player = players.Player(item.replace('.', ''))
-            try:
-                player.fetch_url(True)
-                averages.set_all(player)
-                averages.get_averages()
-                if settings.get_Local() == "True":
-                    player.to_file()
-                if settings.get_JSON() == "True":
-                    player.to_json()
-            except:
-                notfound.append(item)
+
+    player_amount = len(player_list)
+    pbar = tqdm(total=player_amount)
+    for index, item in enumerate(player_list, start=0):
+        player = players.Player(item.replace('.', ''))
+        player.fetch_url(True)
+        player.to_file()
+        player.to_json()
+        averages.set_all(player)
+        if index < player_amount:
+            pbar.update(1)
+        if index > player_amount:
+            break
+    pbar.close()
+
     print("Getting Current Averages")
     print("------------------------")
     avg_obj = averages.get_averages()
+    averages.to_file()
 
 
 def download_teams():
@@ -207,28 +194,21 @@ def download_teams():
     team_list = data_harvest.get_teams()
     print("Downloading All Teams History:")
     print("------------------------")
-    with progressbar.ProgressBar(max_value=(len(team_list))) as bar:
-        for index, item in enumerate(team_list):
-            if index % 10:
-                bar.update(index)
-            team = teams.Team(item.replace('.', ''))
-            try:
-                team.get_team_history()
-            except:
-                notfound.append(item)
-            print("Downloading Specifics for " + team.name)
-            print("------------------------")
-            for itemx in team.team_links:
-                team.get_specific_year(str(itemx))
+    pbar = tqdm(total=(len(team_list)))
+    for index, item in enumerate(team_list):
+        if index % 10:
+            pbar.update(index)
+        team = teams.Team(item.replace('.', ''))
+        try:
+            team.get_team_history()
+        except:
+            notfound.append(item)
 
-
-def visualize(player, team):
-    if player:
-        vis = menu.player_visualize_menu()
-        if vis == "s":
-            option = menu.player_visualize_menu_single()
-            player_visualization.graph_player_stat(player, option)
-        #player_visualization.graph_player_stat_comparison(player, "FG", "FGA")
+        print("Downloading Specifics for " + team.name)
+        print("------------------------")
+        for itemx in team.team_links:
+            team.get_specific_year(str(itemx))
+    pbar.close()
 
 
 def make_folders(folder):
@@ -298,12 +278,6 @@ def mainmenu():
                 settings.set_JSON("False")
             else:
                 settings.set_JSON("True")
-            mainmenu()
-        elif inp == "v":
-            if settings.get_Visual() == "True":
-                settings.set_Visual("False")
-            else:
-                settings.set_Visual("True")
             mainmenu()
         elif inp == "l":
             if settings.get_Local() == "True":
