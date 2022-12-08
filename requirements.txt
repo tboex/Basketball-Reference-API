@@ -3,7 +3,7 @@ attrs == 18.2.0
 beautifulsoup4 == 4.6.3
 black == 18.9b0
 bs4 == 0.0.1
-certifi == 2018.8.24
+certifi == 2022.12.7
 configparser==3.5.0
 chardet == 3.0.4
 Click == 7.0
